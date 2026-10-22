@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3eff6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1c1622" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Her Day</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow column, summary first, then numbers, then trend, then setup */
+:root{
+  --bg:#f3eff6; --surface:#fffdfe; --ink:#251d2c; --muted:#6e6478; --line:#e2dbe8;
+  --accent:#7a3f72; --accent-soft:#f1e4ef;
+  --good:#2f7a5a; --warn:#a8641a; --low:#b2413f;
+  --display:"Young Serif", Georgia, serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#1c1622; --surface:#261e2d; --ink:#f1eaf4; --muted:#a99db3; --line:#3a2f43;
+  --accent:#d79bcc; --accent-soft:#3a2838;
+  --good:#6cc49b; --warn:#e2a660; --low:#ee8a86; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);
+  padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+main{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{font:400 30px/1.1 var(--display);margin:0;text-wrap:balance}
+h2{font:600 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.date{color:var(--muted);font-size:13px}
+.pill{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.summary{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px}
+.headline{font:400 21px/1.3 var(--display);margin:0 0 12px;text-wrap:balance}
+.notes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.notes li{display:grid;grid-template-columns:10px 1fr;gap:10px;align-items:baseline}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);transform:translateY(-1px)}
+.dot.good{background:var(--good)}.dot.warn{background:var(--warn)}.dot.low{background:var(--low)}
+.reminder{margin:14px 0 0;font-size:13px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;min-width:0}
+.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font:400 24px/1.2 var(--display);font-variant-numeric:tabular-nums;margin-top:4px}
+.tile .v small{font:500 12px var(--body);color:var(--muted);margin-left:2px}
+.tile .s{font-size:12px;margin-top:2px}
+.good-t{color:var(--good)}.warn-t{color:var(--warn)}.low-t{color:var(--low)}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-bottom:6px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+svg text{fill:var(--muted);font:11px var(--body)}
+details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+summary{cursor:pointer;font-weight:600}
+.setup{display:flex;flex-direction:column;gap:12px;margin-top:12px;font-size:14px}
+.setup ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;color:var(--muted)}
+input{width:100%;font:15px var(--body);padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+code{font-size:12px;background:var(--bg);padding:6px 8px;border-radius:8px;display:block;word-break:break-all}
+button{font:600 15px var(--body);padding:11px 16px;border-radius:12px;border:0;background:var(--accent);color:var(--surface);cursor:pointer}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.err{color:var(--low);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div><h1>Her day</h1><div class="date" id="date"></div></div>
+    <span class="pill" id="mode">Sample data</span>
+  </div>
+
+  <section class="summary" aria-live="polite">
+    <p class="headline" id="headline">Loading…</p>
+    <ul class="notes" id="notes"></ul>
+    <p class="reminder">These are hints from her ring, not answers. When in doubt, ask her.</p>
+  </section>
+
+  <section>
+    <h2>Last night &amp; today</h2>
+    <div class="tiles" id="tiles"></div>
+  </section>
+
+  <section class="chart">
+    <h2>Past two weeks</h2>
+    <div class="legend"><span><i style="background:var(--accent)"></i>Readiness</span><span><i style="background:var(--muted)"></i>Sleep</span></div>
+    <div id="chart"></div>
+  </section>
+
+  <p class="err" id="err" hidden></p>
+
+  <details id="setupBox">
+    <summary id="setupTitle">Connect her Oura ring</summary>
+    <div class="setup">
+      <ol>
+        <li>On her account, open <b>cloud.ouraring.com/oauth/applications</b> and create a new application.</li>
+        <li>Paste this page's address as the <b>Redirect URI</b>:<code id="redir"></code></li>
+        <li>Copy the <b>Client ID</b> it gives you into the box below.</li>
+        <li>Tap Connect. She signs in and approves. Done for 30 days.</li>
+      </ol>
+      <div><label for="cid">Client ID</label><input id="cid" autocomplete="off" spellcheck="false"></div>
+      <div class="row">
+        <button id="connect">Connect</button>
+        <button id="refresh" class="ghost" hidden>Refresh</button>
+        <button id="disconnect" class="ghost" hidden>Disconnect</button>
+      </div>
+    </div>
+  </details>
+</main>
+
+<script>
+const API = "https://api.ouraring.com/v2/usercollection/";
+const $ = id => document.getElementById(id);
+const store = {
+  get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch{ return null; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} },
+  del(k){ try{ localStorage.removeItem(k); }catch{} }
+};
+const redirectUri = location.origin + location.pathname;
+const iso = d => d.toISOString().slice(0,10);
+const daysAgo = n => { const d = new Date(); d.setDate(d.getDate()-n); return d; };
+
+$("date").textContent = new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+$("redir").textContent = redirectUri;
+const cfg = store.get("oura_cfg") || {};
+if (cfg.clientId) $("cid").value = cfg.clientId;
+
+// ---- OAuth (Oura client-side flow) ----
+function handleRedirect(){
+  if (!location.hash.includes("access_token") && !location.search.includes("error=")) return;
+  const p = new URLSearchParams(location.hash.slice(1));
+  const q = new URLSearchParams(location.search);
+  const expected = sessionStorage.getItem("oura_state");
+  history.replaceState(null, "", redirectUri);
+  if (q.get("error")) return showErr("Access wasn't approved. Tap Connect to try again.");
+  if (!expected || p.get("state") !== expected) return showErr("Sign-in didn't match this page. Tap Connect to try again.");
+  store.set("oura_tok", { token: p.get("access_token"), exp: Date.now() + Number(p.get("expires_in")||0)*1000 });
+}
+$("connect").onclick = () => {
+  const clientId = $("cid").value.trim();
+  if (!clientId) return showErr("Paste the Client ID first.");
+  store.set("oura_cfg", { clientId });
+  const state = crypto.getRandomValues(new Uint32Array(4)).join("-");
+  try{ sessionStorage.setItem("oura_state", state); }catch{}
+  location.href = "https://cloud.ouraring.com/oauth/authorize?" + new URLSearchParams({
+    response_type:"token", client_id:clientId, redirect_uri:redirectUri, scope:"daily heartrate", state
+  });
+};
+$("disconnect").onclick = () => { store.del("oura_tok"); location.reload(); };
+$("refresh").onclick = () => load();
+
+function showErr(msg){ $("err").textContent = msg; $("err").hidden = false; $("setupBox").open = true; }
+
+// ---- Data ----
+async function get(path, token){
+  const url = API + path + "?" + new URLSearchParams({ start_date: iso(daysAgo(14)), end_date: iso(daysAgo(-1)) });
+  const r = await fetch(url, { headers: { Authorization: "Bearer " + token } });
+  if (r.status === 401) throw Object.assign(new Error("expired"), { code: 401 });
+  if (!r.ok) throw new Error("Oura returned " + r.status);
+  return (await r.json()).data || [];
+}
+
+async function load(){
+  const tok = store.get("oura_tok");
+  if (!tok || !tok.token || tok.exp < Date.now()){
+    if (tok) { store.del("oura_tok"); showErr("The 30-day sign-in ran out. Tap Connect so she can approve again."); }
+    else $("setupBox").open = true;
+    return render(sampleData(), false);
+  }
+  $("mode").textContent = "Live"; $("setupTitle").textContent = "Connection";
+  $("connect").textContent = "Reconnect"; $("refresh").hidden = false; $("disconnect").hidden = false;
+  try{
+    const [sleepD, ready, act, stress, sessions] = await Promise.all([
+      get("daily_sleep", tok.token), get("daily_readiness", tok.token), get("daily_activity", tok.token),
+      get("daily_stress", tok.token).catch(()=>[]), get("sleep", tok.token)
+    ]);
+    render({ sleepD, ready, act, stress, sessions: sessions.filter(s => s.type === "long_sleep" || !s.type) }, true);
+  }catch(e){
+    if (e.code === 401){ store.del("oura_tok"); showErr("The sign-in expired. Tap Reconnect so she can approve again."); }
+    else showErr("Couldn't reach Oura (" + e.message + "). If this keeps happening, the browser may be blocking the request; see the notes Claude gave you.");
+    render(sampleData(), false);
+  }
+}
+
+// ---- Interpretation ----
+const byDay = arr => Object.fromEntries(arr.map(x => [x.day, x]));
+const latest = arr => arr.length ? arr.slice().sort((a,b)=>a.day<b.day?-1:1).at(-1) : null;
+const band = s => s == null ? "" : s >= 85 ? "good" : s >= 70 ? "" : "low";
+const fmtDur = s => s == null ? "–" : `${Math.floor(s/3600)}h ${String(Math.round(s%3600/60)).padStart(2,"0")}`;
+
+function interpret(d){
+  const r = latest(d.ready), sl = latest(d.sleepD), st = latest(d.stress), ses = latest(d.sessions);
+  const notes = []; let low = 0;
+  if (sl?.score != null){
+    if (sl.score < 70){ low++; notes.push(["low","Rough night. Sleep score " + sl.score + "."]); }
+    else if (sl.score >= 85) notes.push(["good","Slept well (" + sl.score + ")."]);
+  }
+  if (ses?.total_sleep_duration != null && ses.total_sleep_duration < 6*3600){
+    low++; notes.push(["warn","Short night: " + fmtDur(ses.total_sleep_duration) + " of sleep. An early night could help."]);
+  }
+  if (r?.score != null){
+    if (r.score < 70){ low++; notes.push(["low","Low readiness (" + r.score + "). Her body is asking for an easier day."]); }
+    else if (r.score >= 85) notes.push(["good","High readiness (" + r.score + "). Good energy for plans."]);
+  }
+  const t = r?.temperature_deviation;
+  if (t != null && t >= 0.5) notes.push(["warn","Body temperature is up " + t.toFixed(1) + "°C from her normal. Could be her cycle or something coming on. Worth asking how she feels."]);
+  if (st?.day_summary === "stressful"){ low++; notes.push(["warn","Her body logged a stressful day. A calm evening might land well."]); }
+  else if (st?.day_summary === "restored") notes.push(["good","Mostly restored today, low stress."]);
+  const head = low >= 2 ? "Take it gentle today." : low === 1 ? "A bit below her best." : notes.some(n=>n[0]==="good") ? "She's in good shape today." : "A normal day.";
+  if (!notes.length) notes.push(["","Nothing unusual in today's numbers."]);
+  return { head, notes, r, sl, st, ses };
+}
+
+function render(d, live){
+  const { head, notes, r, sl, st, ses } = interpret(d);
+  $("headline").textContent = head;
+  $("notes").replaceChildren(...notes.map(([cls,txt]) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="dot ${cls}"></span><span></span>`;
+    li.lastChild.textContent = txt; return li;
+  }));
+  const t = r?.temperature_deviation;
+  const stressTxt = { restored:"Restored", normal:"Normal", stressful:"Stressful" }[st?.day_summary] || "–";
+  const tiles = [
+    ["Readiness", r?.score ?? "–", "", band(r?.score)],
+    ["Sleep score", sl?.score ?? "–", "", band(sl?.score)],
+    ["Slept", fmtDur(ses?.total_sleep_duration), "", ses?.total_sleep_duration < 6*3600 ? "warn" : ""],
+    ["Stress", stressTxt, "", st?.day_summary==="stressful" ? "warn" : st?.day_summary==="restored" ? "good" : ""],
+    ["Lowest HR", ses?.lowest_heart_rate ?? "–", "bpm", ""],
+    ["Temp", t == null ? "–" : (t>0?"+":"") + t.toFixed(1), "°C", t >= 0.5 ? "warn" : ""]
+  ];
+  $("tiles").innerHTML = tiles.map(([k,v,u,c]) =>
+    `<div class="tile"><div class="k">${k}</div><div class="v ${c ? c+"-t" : ""}">${v}${u && v!=="–" ? `<small>${u}</small>` : ""}</div></div>`).join("");
+  drawChart(d);
+  if (!live) $("mode").textContent = "Sample data";
+}
+
+function drawChart(d){
+  const days = [...Array(14)].map((_,i)=>iso(daysAgo(13-i)));
+  const R = byDay(d.ready), S = byDay(d.sleepD);
+  const W=440, H=150, L=28, Rt=8, T=10, B=22, lo=40, hi=100;
+  const x = i => L + i*(W-L-Rt)/13, y = v => T + (hi-v)*(H-T-B)/(hi-lo);
+  const line = (src,color,w) => { let p="",open=false; days.forEach((dd,i)=>{ const v=src[dd]?.score; if(v==null){open=false;return;} p+=(open?"L":"M")+x(i).toFixed(1)+" "+y(Math.max(lo,v)).toFixed(1); open=true; }); return `<path d="${p}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`; };
+  const last = days.length-1, lv = R[days[last]]?.score;
+  const grid = [50,70,85,100].map(v=>`<line x1="${L}" x2="${W-Rt}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`).join("");
+  const labels = [0,7,13].map(i=>`<text x="${x(i)}" y="${H-4}" text-anchor="${i===0?"start":i===13?"end":"middle"}">${new Date(days[i]+"T12:00").toLocaleDateString(undefined,{month:"short",day:"numeric"})}</text>`).join("");
+  $("chart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Readiness and sleep scores over the past 14 days">${grid}${labels}${line(S,"var(--muted)",1.5)}${line(R,"var(--accent)",2.5)}${lv!=null?`<circle cx="${x(last)}" cy="${y(lv)}" r="4" fill="var(--accent)"/>`:""}</svg>`;
+}
+
+function sampleData(){
+  const rs=[82,78,74,80,86,88,71,64,69,77,83,85,79,66], ss=[80,76,72,84,88,85,68,61,73,79,81,87,77,63];
+  const days=[...Array(14)].map((_,i)=>iso(daysAgo(13-i)));
+  return {
+    ready: days.map((day,i)=>({day,score:rs[i],temperature_deviation:i===13?0.6:0.1})),
+    sleepD: days.map((day,i)=>({day,score:ss[i]})),
+    act: [],
+    stress: [{day:days[13],day_summary:"stressful"}],
+    sessions: [{day:days[13],type:"long_sleep",total_sleep_duration:5.6*3600,lowest_heart_rate:54}]
+  };
+}
+
+handleRedirect();
+load();
+</script>
+</body>
+</html>
